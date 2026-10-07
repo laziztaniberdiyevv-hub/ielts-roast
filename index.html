@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Jallod Ustoz: IELTS roast</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Caveat+Brush&display=swap" rel="stylesheet">
+<style>
+:root{--board:#1e3a33;--board2:#16302a;--chalk:#f2efe6;--mark:#7fd1a0;--you:#2c4f46;--lvl:0}
+body{margin:0;min-height:100vh;background:var(--board);color:var(--chalk);font:16px/1.55 system-ui,sans-serif;transition:background .5s;display:flex;justify-content:center}
+body[data-l="1"]{--board:#1e3a33;--mark:#7fd1a0;--you:#2c4f46}
+body[data-l="2"]{--board:#2d3a2a;--mark:#c8d96a;--you:#44503d}
+body[data-l="3"]{--board:#40361f;--mark:#f0b84a;--you:#574b30}
+body[data-l="4"]{--board:#4a2a1c;--mark:#ff8a4c;--you:#633d2d}
+body[data-l="5"]{--board:#4d1b1b;--mark:#ff5a52;--you:#692c2c}
+body[data-l="6"]{--board:#2a0808;--mark:#ff2e2e;--you:#4a1414}
+main{width:100%;max-width:760px;padding:16px;display:flex;flex-direction:column;height:100vh;height:100dvh;box-sizing:border-box}
+h1{font:2.4rem/1 "Caveat Brush",cursive;margin:4px 0 2px;color:var(--mark);transition:color .5s}
+.sub{margin:0 0 12px;opacity:.75;font-size:.9rem}
+.panel{background:#0003;border-radius:12px;padding:12px 14px;margin-bottom:12px}
+.row{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.lvl-name{font-weight:700;color:var(--mark)}
+input[type=range]{flex:1;min-width:160px;accent-color:var(--mark)}
+select,textarea,button{font:inherit;color:inherit}
+select{background:#0004;border:1px solid #fff3;border-radius:8px;padding:6px 8px}
+select option{color:#000}
+#log{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:10px;padding:4px 2px}
+.msg{max-width:88%;padding:10px 13px;border-radius:12px;white-space:pre-wrap;word-wrap:break-word}
+.msg.me{align-self:flex-end;background:var(--you)}
+.msg.bot{align-self:flex-start;background:#0004;border-left:4px solid var(--mark)}
+.msg.err{align-self:center;background:#0006;color:#ffd0d0}
+.empty{opacity:.6;text-align:center;margin:auto;max-width:420px}
+form{display:flex;gap:8px;margin-top:10px}
+textarea{flex:1;resize:none;background:#0004;border:1px solid #fff3;border-radius:10px;padding:10px;min-height:48px;max-height:140px}
+button.send{background:var(--mark);color:#111;border:0;border-radius:10px;padding:0 20px;font-weight:700;cursor:pointer}
+button:disabled{opacity:.5;cursor:wait}
+:focus-visible{outline:2px solid var(--chalk);outline-offset:2px}
+dialog{background:#1a1a1a;color:var(--chalk);border:2px solid var(--mark);border-radius:14px;max-width:360px}
+dialog::backdrop{background:#000b}
+dialog menu{display:flex;gap:8px;padding:0;margin:14px 0 0}
+dialog button{flex:1;padding:9px;border-radius:8px;border:1px solid #fff4;background:#0006;cursor:pointer}
+dialog button.ok{background:var(--mark);color:#111;border:0;font-weight:700}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body data-l="3">
+<main>
+  <h1>Jallod Ustoz</h1>
+  <p class="sub">IELTS'ni kulib turib o'rgan. Ustoz xatolaringni roast qiladi, keyin tuzatadi.</p>
+
+  <div class="panel">
+    <div class="row">
+      <label for="lvl">Xarizma:</label>
+      <input id="lvl" type="range" min="1" max="6" value="3">
+      <span id="lvlName" class="lvl-name"></span>
+    </div>
+    <div class="row" style="margin-top:8px">
+      <label for="mode">Rejim:</label>
+      <select id="mode">
+        <option value="writing">Writing tekshiruvi</option>
+        <option value="speaking">Speaking mashqi</option>
+        <option value="vocab">Lug'at va grammatika</option>
+      </select>
+      <button id="clear" type="button" style="margin-left:auto;background:none;border:1px solid #fff4;border-radius:8px;padding:6px 10px;cursor:pointer">Tozalash</button>
+    </div>
+  </div>
+
+  <div id="log" aria-live="polite">
+    <div class="empty" id="empty">Inglizcha gap yoki essay yoz. Daraja qanchalik baland bo'lsa, ustoz shunchalik shafqatsiz.</div>
+  </div>
+
+  <form id="form">
+    <textarea id="input" rows="1" maxlength="3000" placeholder="Inglizcha matningni shu yerga yoz..." aria-label="Xabar"></textarea>
+    <button class="send" id="send">Yubor</button>
+  </form>
+</main>
+
+<dialog id="adult">
+  <strong>18+ ogohlantirish</strong>
+  <p>5 va 6-darajalarda ustoz qo'pol so'zlar ishlatadi. Bu faqat hazil va xatolaringga qaratilgan. Davom etasanmi?</p>
+  <menu><button id="no" type="button">Yo'q</button><button id="yes" class="ok" type="button">Ha, 18 yoshdaman</button></menu>
+</dialog>
+
+<script>
+const tg = window.Telegram && window.Telegram.WebApp;
+if (tg) { tg.ready(); tg.expand(); }
+const NAMES = {1:"🙂 Mehribon",2:"😏 Hazilkash",3:"😒 Qattiqqo'l",4:"😤 Jahldor",5:"🔥 Roast ustasi",6:"💀 Jahannam"};
+const $ = (id) => document.getElementById(id);
+const lvl = $("lvl"), log = $("log"), input = $("input"), send = $("send"), adult = $("adult");
+let history = [], adultOk = false, prev = 3, busy = false;
+
+function applyLevel(){ document.body.dataset.l = lvl.value; $("lvlName").textContent = NAMES[lvl.value] + " (" + lvl.value + "/6)"; }
+applyLevel();
+
+lvl.addEventListener("input", () => {
+  if (+lvl.value >= 5 && !adultOk) { lvl.value = prev; applyLevel(); adult.showModal(); return; }
+  prev = +lvl.value; applyLevel();
+});
+$("yes").onclick = () => { adultOk = true; adult.close(); lvl.value = 5; prev = 5; applyLevel(); };
+$("no").onclick = () => adult.close();
+
+function add(text, cls){
+  const e = $("empty"); if (e) e.remove();
+  const d = document.createElement("div");
+  d.className = "msg " + cls;
+  // xavfsiz: textContent, keyin **qalin** ni almashtirish uchun bo'laklarga ajratamiz
+  text.split(/(\*\*[^*]+\*\*)/g).forEach((part) => {
+    if (/^\*\*[^*]+\*\*$/.test(part)) { const b = document.createElement("b"); b.textContent = part.slice(2,-2); d.append(b); }
+    else d.append(document.createTextNode(part));
+  });
+  log.append(d); log.scrollTop = log.scrollHeight; return d;
+}
+
+$("clear").onclick = () => { history = []; log.innerHTML = '<div class="empty" id="empty">Yangi dars. Yoz!</div>'; };
+
+async function submit(ev){
+  ev.preventDefault();
+  const text = input.value.trim();
+  if (!text || busy) return;
+  busy = true; send.disabled = true;
+  add(text, "me"); history.push({role:"user", text}); input.value = "";
+  const wait = add("Ustoz o'ylanyapti...", "bot");
+  try {
+    const r = await fetch("/.netlify/functions/chat", {
+      method:"POST", headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({ level:+lvl.value, mode:$("mode").value, history, initData: tg ? tg.initData : "" })
+    });
+    const data = await r.json();
+    wait.remove();
+    if (!r.ok || data.error) throw new Error(data.error || "Xato");
+    history.push({role:"model", text:data.reply}); add(data.reply, "bot");
+  } catch (e) {
+    wait.remove(); history.pop(); add(e.message || "Ulanishda xato.", "err");
+  } finally { busy = false; send.disabled = false; input.focus(); }
+}
+$("form").addEventListener("submit", submit);
+input.addEventListener("keydown", (e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); $("form").requestSubmit(); } });
+</script>
+</body>
+</html>
